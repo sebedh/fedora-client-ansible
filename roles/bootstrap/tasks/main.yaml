@@ -1,0 +1,37 @@
+---
+
+- name: Ensure pre req packages are installed
+  ansible.builtin.package:
+    state: present
+    name: "{{ bootstrap_packages }}"
+
+- name: Install group
+  ansible.builtin.group:
+    name: "{{ bootstrap_user }}"
+
+- name: Install user
+  ansible.builtin.user:
+    state: present
+    name: "{{ bootstrap_user }}"
+    comment: "The user"
+    create_home: true
+    groups: "wheel,{{ bootstrap_user }}"
+    append: true
+    home: "/home/{{ bootstrap_user }}"
+    password: "{{ bootstrap_user_password_enc }}"
+
+- name: Install SSH Public key
+  ansible.posix.authorized_key:
+    user: "{{ bootstrap_user }}"
+    state: present
+    key: "{{ lookup('url', 'https://github.com/sebedh.keys', split_lines=False) }}"
+
+- name: Fetch UID
+  ansible.builtin.getent:
+    database: passwd
+
+- name: Ensure ssh is enabled
+  ansible.builtin.systemd_service:
+    name: sshd.service
+    state: started
+    enabled: true

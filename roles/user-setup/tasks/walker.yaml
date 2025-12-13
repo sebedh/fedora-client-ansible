@@ -1,0 +1,35 @@
+---
+
+- name: Clone walker repo
+  ansible.builtin.git:
+    repo: https://github.com/abenz1267/walker.git
+    dest: "/home/{{ user_setup_user }}/src/github/walker"
+    version: "v{{ user_setup_walker_version }}"
+
+- name: Check that walker is installed and get version
+  ansible.builtin.command: walker --version
+  register: _walker
+  ignore_errors: true
+  changed_when: false
+
+- name: Build walker
+  ansible.builtin.shell: |
+    cargo build --release
+    cp ./target/release/walker ~/.local/bin/walker
+  args:
+    chdir: "/home/{{ user_setup_user }}/src/github/walker"
+  when: _walker.rc == 2 or
+    user_setup_walker_version is version(_walker.stdout, '>', version_type='semver')
+
+- name: Install autologin script for walker
+  ansible.builtin.copy:
+    dest: "/home/{{ user_setup_user }}/.config/autostart/walker.desktop"
+    content: |
+      [Desktop Entry]
+      Name=Walker
+      Comment=Walker Service
+      Exec=walker --gapplication-service
+      StartupNotify=false
+      Terminal=false
+      Type=Application
+    mode: "0644"

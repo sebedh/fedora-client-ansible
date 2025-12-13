@@ -1,0 +1,201 @@
+---
+
+- name: Set user UID
+  ansible.builtin.set_fact:
+   myuid: "{{ ansible_facts.getent_passwd[user_setup_user].1 }}"
+
+- name: Do some root stuff
+  become: true
+  block:
+
+    - name: Ensure graphical target
+      ansible.builtin.command: systemctl set-default graphical.target
+      changed_when: false
+
+    - name: Add RPM key for 1password
+      ansible.builtin.rpm_key:
+        state: present
+        key: "https://downloads.1password.com/linux/keys/1password.asc"
+
+    - name: Setup repository for 1password
+      ansible.builtin.copy:
+        dest: "/etc/yum.repos.d/1passord.repo"
+        content: |
+          [1password]
+          name=1Password Stable Channel
+          baseurl=https://downloads.1password.com/linux/rpm/stable/$basearch
+          enabled=1
+          gpgcheck=1
+          gpgkey="https://downloads.1password.com/linux/keys/1password.asc"
+
+    - name: Enable all copr
+      community.general.copr:
+        host: "{{ item.host }}"
+        name: "{{ item.name }}"
+        state: "{{ item.state }}"
+      loop: "{{ user_setup_copr }}"
+      tags:
+        - prereqs
+
+    #- name: Ensure Hyprland is installed
+    #  ansible.builtin.package:
+    #    state: present
+    #    name: "{{ user_setup_hyprland_packages }}"
+    #  tags: hyprland
+
+    - name: Install Sway
+      ansible.builtin.package:
+        state: present
+        name:
+          - sddm-wayland-sway
+          - sway
+          - polkit-kde
+      tags: sway
+
+    - name: Ensure pre req packages are installed
+      ansible.builtin.package:
+        state: present
+        name:
+          - 1password
+          - 1password-cli
+          - NetworkManager-wifi
+          - alsa-sof-firmware
+          - alsa-utils
+          - bash-completion
+          - blueman
+          - cairo-gobject-devel
+          - cmake
+          - fcitx5
+          - gdk-pixbuf2-devel
+          - ghostty
+          - gimp
+          - grim
+          - gtk4-devel
+          - gtk4-layer-shell-devel
+          - gvfs
+          - libreoffice
+          - mako
+          - man
+          - meson
+          - nautilus
+          - nerd-fonts
+          - poppler-glib-devel
+          - protobuf-compiler
+          - python3-dnf
+          - python3-pexpect
+          - thunderbird
+          - uwsm
+          - vlc
+          - waybar
+          - xdg-terminal-exec
+      tags:
+        - prereqs
+
+    - name: Create dir for zen-browser
+      ansible.builtin.file:
+        state: directory
+        path: /opt/zen-browser-bin
+
+    - name: Download zen-browser
+      ansible.builtin.unarchive: 
+        src: https://github.com/zen-browser/desktop/releases/latest/download/zen.linux-x86_64.tar.xz
+        dest: /opt/zen-browser-bin
+        remote_src: true
+        extra_opts:
+          - --strip-components=1
+
+    - name: Install Zen application file
+      ansible.builtin.copy:
+        src: zen.desktop
+        dest: /usr/share/applications/zen.desktop
+        mode: "0644"
+
+    - name: Install Zen bash bin
+      ansible.builtin.copy:
+        src: zen-browser
+        dest: /usr/bin/zen-browser
+        mode: "0755"
+
+    - name: Create a sway uwsm session
+      ansible.builtin.copy:
+        dest: /usr/share/wayland-sessions/sway-uwsm.desktop
+        content: |
+          [Desktop Entry]
+          Name=Sway with UWSM
+          Comment=An i3-compatible Wayland compositor
+
+          Exec=uwsm start -e -D Sway sway.desktop
+          Type=Application
+          DesktopNames=sway;wlroots
+      tags:
+        - sway
+
+    - name: Enable services
+      ansible.builtin.systemd_service:
+        name: sddm.service
+        state: started
+        enabled: true
+      notify: reboot
+
+- name: Create some required dirs
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+  loop:
+    - "/home/{{ user_setup_user }}/.local/bin"
+    - "/home/{{ user_setup_user }}/.config/tmux/plugins/"
+    - "/home/{{ user_setup_user }}/.config/autostart"
+    - "/home/{{ user_setup_user }}/src"
+    - "/home/{{ user_setup_user }}/src/github"
+    - "/home/{{ user_setup_user }}/src/vrvl"
+  tags:
+    - setup
+    - prereq
+
+- name: Git clone tpm tmux manager
+  ansible.builtin.git:
+    repo: https://github.com/tmux-plugins/tpm
+    dest: "/home/{{ user_setup_user }}/.config/tmux/plugins/tpm"
+    version: master
+  tags:
+    - setup
+    - tmux
+
+- name: Git clone tmux cattppuccin
+  ansible.builtin.git:
+    repo: https://github.com/catppuccin/tmux
+    dest: "/home/{{ user_setup_user }}/.config/tmux/plugins/catppuccin/tmux"
+    version: "v2.1.3"
+  tags:
+    - setup
+    - tmux
+
+- name: Setup brew
+  ansible.builtin.import_tasks: homebrew.yaml
+  tags: homebrew
+
+- name: Configure fish shell
+  ansible.builtin.import_tasks: fish.yaml
+  tags: fish
+
+- name: Install dotfiles
+  ansible.builtin.import_tasks: dotfiles.yaml
+  tags: install-dotfiles
+
+- name: Setup rustup
+  ansible.builtin.import_tasks: rustup.yaml
+  tags:
+    - rust
+    - rustup
+
+- name: Setup go
+  ansible.builtin.import_tasks: go.yaml
+  tags: go
+
+- name: Install elephant
+  ansible.builtin.import_tasks: elephant.yaml
+  tags: elephant
+
+- name: Install walker
+  ansible.builtin.import_tasks: walker.yaml
+  tags: walker

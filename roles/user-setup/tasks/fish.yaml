@@ -1,0 +1,65 @@
+---
+
+- name: Configure fish
+  ansible.builtin.lineinfile:
+    path: /etc/shells
+    insertafter: EOF
+    line: /home/linuxbrew/.linuxbrew/bin/fish
+  become: true
+
+- name: Change default shell
+  ansible.builtin.user:
+    name: "{{ user_setup_user }}"
+    shell: /home/linuxbrew/.linuxbrew/bin/fish
+  changed_when: false
+  become: true
+
+- name: Check if fisher is installed
+  ansible.builtin.stat:
+    path: "/home/{{ user_setup_user }}/.config/fish/fish_plugins"
+  register: _fisher_plugins
+
+- name: Block install fisher
+  when: not _fisher_plugins.stat.exists
+  block:
+    - name: Create tempdir for fisher install script
+      ansible.builtin.tempfile:
+        state: directory
+      changed_when: false
+      register: _tmp_fisher
+
+    - name: Get fisher script
+      ansible.builtin.get_url:
+          url: "{{ user_setup_fisher_url }}"
+          dest: "{{ _tmp_fisher.path }}"
+          mode: "0755"
+
+    - name: Run fisher install script
+      ansible.builtin.shell: |
+        source {{ _tmp_fisher.path }}/fisher.fish && fisher install jorgebucaran/fisher
+      args:
+        executable: /home/linuxbrew/.linuxbrew/bin/fish
+
+  always:
+    - name: Remove tempdir
+      ansible.builtin.file:
+        path: "{{ _tmp_fisher.path }}"
+        state: absent
+      when: _tmp_fisher.path is defined
+
+- name: Install fish plugins
+  ansible.builtin.shell: |
+    fisher install {{ item.plugin }}
+  args:
+    executable: /home/linuxbrew/.linuxbrew/bin/fish
+    creates: "/home/{{ user_setup_user }}/.config/fish/conf.d/{{ item.conf_file }}"
+  changed_when: false
+  loop:
+    - plugin: jethrokuan/fzf
+      conf_file: fzf.fish
+    - plugin: jorgebucaran/nvm.fish
+      conf_file: nvm.fish
+    - plugin: pure-fish/pure
+      conf_file: pure.fish
+  tags:
+    - fisher

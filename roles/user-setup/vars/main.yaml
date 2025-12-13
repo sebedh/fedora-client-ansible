@@ -1,0 +1,24 @@
+---
+user_setup_hyprland_packages:
+  - cairo-devel
+  - gcc-c++
+  - gvfs
+  - gvfs-mtp
+  - hyprland
+  - hypridle
+  - hyprpolkitagent
+  - iwl*
+  - kitty
+  - libX11-devel
+  - libxcb-devel
+  - meson
+  - ninja-build
+  - nm-connection-editor-desktop
+  - pango-devel
+  - pavucontrol
+  - pixman-devel
+  - sddm
+  - tuned
+  - tuned-ppd
+  - waybar
+  - wayland-protocols-devel

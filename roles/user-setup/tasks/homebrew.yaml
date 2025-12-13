@@ -1,0 +1,81 @@
+---
+
+- name: Check if homebrew is installed
+  ansible.builtin.stat:
+    path: /home/linuxbrew/.linuxbrew/Homebrew/bin/brew
+  register: _hb_bin
+
+- name: Install homebrew if not present
+  when: not _hb_bin.stat.exists
+  block:
+
+    - name: Create tempdir for install script
+      ansible.builtin.tempfile:
+        state: directory
+      register: _tmp_hb_dir
+
+    - name: Fetch Homebrew install script
+      ansible.builtin.get_url: 
+        url: "{{ user_setup_homebrew_url }}"
+        dest: "{{ _tmp_hb_dir.path }}"
+        mode: "0755"
+
+    - name: Check if sudo file is configured
+      ansible.builtin.stat:
+        path: "/etc/sudoers.d/{{ user_setup_user }}"
+      register: _sudo
+      become: true
+
+    - name: Set response with password
+      ansible.builtin.set_fact:
+        brew_responses:
+          (?i)password: "{{ bootstrap_user_password }}"
+          (?i)to continue: ""
+      when: _sudo.stat.exists
+
+    - name: Set response without password
+      ansible.builtin.set_fact:
+        brew_responses:
+          (?i)to continue: ""
+      when: not _sudo.stat.exists
+
+    - name: Run Homebrew install script
+      ansible.builtin.expect:
+        command: "{{ _tmp_hb_dir.path }}/install.sh"
+        responses: "{{ brew_responses }}"
+      retries: 3
+      delay: 3
+      register: result
+      until: result.rc == 0
+
+  always:
+    - name: Delete tempfiles
+      ansible.builtin.file:
+        state: "absent"
+        path: "{{ _tmp_hb_dir.path }}"
+      when: _tmp_hb_dir.path is defined
+
+- name: Setup PATH for brew
+  ansible.builtin.lineinfile:
+    path: "/home/{{ user_setup_user }}/.bashrc"
+    regexp: '\s+(PATH=)".*"'
+    line: '    \g<1>"$HOME/.local/bin/:$HOME/bin:/home/linuxbrew/.linuxbrew/bin:$PATH"'
+    backrefs: true
+
+- name: Setup brew applications
+  community.general.homebrew:
+    name: "{{ item.name }}"
+    install_options: "{{ item.options | default(omit) }}"
+    state: present
+  loop:
+    - name: fd
+    - name: fish
+    - name: fzf
+    - name: jujutsu
+    - name: kubectl
+    - name: neovim
+      options: "HEAD"
+    - name: ripgrep
+    - name: tmux
+
+

@@ -1,0 +1,29 @@
+---
+user_setup_homebrew_url: "https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
+user_setup_fisher_url: "https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish"
+user_setup_user: sebbe
+
+user_setup_elephant_version: "2.17.1"
+user_setup_elephant_plugins:
+  - 1password
+  - bluetooth
+  - clipboard
+  - desktopapplications
+  - files
+  - menus
+  - runner
+  - symbols
+  - unicode
+  - windows
+user_setup_walker_version: "2.12.2"
+
+user_setup_copr:
+  - host: "copr.fedorainfracloud.org"
+    name: scottames/ghostty
+    state: enabled
+  - host: "copr.fedorainfracloud.org"
+    name: che/nerd-fonts
+    state: enabled
+  - host: "copr.fedorainfracloud.org"
+    name: solopasha/hyprland
+    state: enabled

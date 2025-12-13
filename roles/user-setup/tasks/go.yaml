@@ -1,0 +1,30 @@
+---
+
+- name: Check if go is installed and in path
+  ansible.builtin.command: /usr/local/go/bin/go version
+  ignore_errors: true
+  changed_when: false
+  register: _go_installed
+
+- name: Install go if needed
+  when: _go_installed.rc == 2
+  block:
+    - name: Create tempdir for go
+      ansible.builtin.tempfile:
+        state: directory
+      register: _tmp_go
+
+    - name: Download Go and unarchive go
+      ansible.builtin.unarchive:
+        src: "https://go.dev/dl/go1.25.5.linux-amd64.tar.gz"
+        dest: /usr/local
+        remote_src: true
+      become: true
+
+  always:
+
+    - name: Ensure tmp dir is removed
+      ansible.builtin.file:
+        state: absent
+        path: "{{ _tmp_go.path }}"
+      when: _tmp_go.path is defined

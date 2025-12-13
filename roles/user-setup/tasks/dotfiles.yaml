@@ -1,0 +1,17 @@
+---
+
+- name: Clone my dot files
+  ansible.builtin.git:
+    repo: https://github.com/sebedh/dotfiles.git
+    dest: "/home/{{ user_setup_user }}/src/dotfiles"
+    version: main
+  tags:
+    - dotfiles
+    - update-dotfiles
+
+- name: Setup my dotfiles
+  ansible.builtin.shell: "/home/{{ user_setup_user }}/src/dotfiles/link.sh"
+  args:
+    chdir: "/home/{{ user_setup_user }}/src/dotfiles"
+  tags:
+    - relink-dotfiles

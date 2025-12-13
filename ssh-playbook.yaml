@@ -1,0 +1,21 @@
+---
+
+- name: Bootstrap
+  gather_facts: true
+  hosts: fedora
+  vars:
+    # This is lab setup, vm that needs to protection
+    ansible_user: root
+    ansible_ssh_password: "{{ bootstrap_root_password }}"
+  roles:
+    - role: bootstrap
+
+- name: Install user stuff
+  gather_facts: true
+  hosts: fedora
+  vars:
+    ansible_user: "{{ bootstrap_user | default('sebbe') }}"
+    ansible_become_password: "{{ bootstrap_user_password }}"
+
+  roles:
+    - role: user-setup

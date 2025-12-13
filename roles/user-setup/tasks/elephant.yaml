@@ -1,0 +1,59 @@
+---
+
+- name: Clone elephant repo
+  ansible.builtin.git:
+    repo: https://github.com/abenz1267/elephant.git
+    dest: "/home/{{ user_setup_user }}/src/github/elephant"
+    version: "v{{ user_setup_elephant_version }}"
+
+- name: Check installed that elephant is installed version
+  ansible.builtin.command: elephant version
+  register: _elephant
+  ignore_errors: true
+  changed_when: false
+
+- name: Block install or upgrade elephant
+  when: _elephant.rc == 2 or 
+    user_setup_elephant_version is version(_elephant.stdout, '>', version_type='semver')
+  block:
+
+    - name: Build elephant cmd
+      ansible.builtin.shell: |
+        cd cmd/elephant && /usr/local/go/bin/go install elephant.go
+      args:
+        chdir: "/home/{{ user_setup_user }}/src/github/elephant"
+
+    - name: Symlink elephant to /usr/bin/elepant
+      ansible.builtin.file:
+        src: "/home/{{ user_setup_user }}/go/bin/elephant"
+        dest: "/usr/bin/elephant"
+        state: link
+        owner: root
+        group: root
+      become: true
+
+    - name: Ensure elephant provider dir exists
+      ansible.builtin.file:
+        path: "/home/{{ user_setup_user }}/.config/elephant/providers"
+        state: directory
+
+    - name: Build elephant and plugins
+      ansible.builtin.shell: |
+
+        cd internal/providers/{{ item }}
+        /usr/local/go/bin/go build -buildmode=plugin
+        cp {{ item }}.so ~/.config/elephant/providers
+
+      args:
+        chdir: "/home/{{ user_setup_user }}/src/github/elephant"
+      loop: "{{ user_setup_elephant_plugins }}"
+
+- name: Start and enable elephant
+  ansible.builtin.command: elephant service enable
+  changed_when: false
+
+- name: Ensure elephant is started
+  ansible.builtin.systemd_service:
+    name: elephant
+    state: started
+    scope: user
