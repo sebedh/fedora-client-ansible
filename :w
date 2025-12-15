@@ -1,0 +1,11 @@
+/000 ../
+/002 .git/
+/004 .venv/
+/001 roles/
+/008 .env
+/011 .gitignore
+/003 .python-version
+/012 1.spawn_vm.sh
+/007 2.ansible.sh
+/010 README.md
+/006 ssh-playbook.yaml

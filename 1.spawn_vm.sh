@@ -16,3 +16,17 @@ sudo incus exec fedora -- /bin/bash -c "sed -i 's/^#\(PermitRootLogin\).*/\1 yes
 sudo incus exec fedora -- /bin/bash -c "echo 'root' | passwd --stdin"
 sudo incus exec fedora -- /bin/bash -c "systemctl enable --now sshd"
 sudo incus exec fedora -- /bin/bash -c "echo 'sebbe ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/sebbe"
+
+IP_ADDRESS=$(sudo incus list --format=json | jq -r '.[]
+    | select(.name == "fedora")
+    | .state.network
+    | to_entries[]
+    | select(.key != "lo")
+    | .value.addresses[]
+    | select(.family == "inet")
+    | .address')
+
+cat << EOF > inventory
+[clients]
+fedora ansible_host=$IP_ADDRESS
+EOF
