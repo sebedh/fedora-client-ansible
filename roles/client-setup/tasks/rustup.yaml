@@ -28,7 +28,7 @@
       ansible.builtin.shell: |
         cat {{ _rustup.path }}/rustup-init.sh | sh -s -- -y
       args:
-        creates: "/home/{{ user_setup_user }}/.config/fish/conf.d/rustup.fish"
+        creates: "/home/{{ client_setup_user }}/.config/fish/conf.d/rustup.fish"
 
   always:
 

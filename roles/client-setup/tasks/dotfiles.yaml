@@ -15,3 +15,11 @@
     chdir: "/home/{{ user_setup_user }}/src/dotfiles"
   tags:
     - relink-dotfiles
+
+- name: Clone neovim configuration
+  ansible.builtin.git:
+    repo: https://github.com/sebedh/nvim.git
+    dest: "/home/{{ user_setup_user }}/.config/nvim"
+  tags:
+    - dotfiles
+    - update-dotfiles

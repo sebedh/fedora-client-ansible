@@ -1,10 +1,9 @@
 ---
-user_setup_homebrew_url: "https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
-user_setup_fisher_url: "https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish"
-user_setup_user: sebbe
-
-user_setup_elephant_version: "2.17.1"
-user_setup_elephant_plugins:
+client_setup_homebrew_url: "https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
+client_setup_fisher_url: "https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish"
+client_setup_user: sebbe
+client_setup_elephant_version: "2.17.1"
+client_setup_elephant_plugins:
   - 1password
   - bluetooth
   - clipboard
@@ -15,9 +14,8 @@ user_setup_elephant_plugins:
   - symbols
   - unicode
   - windows
-user_setup_walker_version: "2.12.2"
-
-user_setup_copr:
+client_setup_walker_version: "2.12.2"
+client_setup_copr:
   - host: "copr.fedorainfracloud.org"
     name: scottames/ghostty
     state: enabled
@@ -27,3 +25,4 @@ user_setup_copr:
   - host: "copr.fedorainfracloud.org"
     name: solopasha/hyprland
     state: enabled
+client_setup_wm: "sway"

@@ -1,0 +1,20 @@
+---
+
+client_setup_wm_packages:
+  hyprland:
+    - gcc-c++
+    - gvfs
+    - gvfs-mtp
+    - hyprland
+    - hypridle
+    - hyprpolkitagent
+    - libX11-devel
+    - libxcb-devel
+    - pixman-devel
+    - sddm
+    - tuned
+    - tuned-ppd
+  sway:
+    - sddm-wayland-sway
+    - sway
+    - polkit-kde
